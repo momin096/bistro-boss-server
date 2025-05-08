@@ -87,21 +87,26 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
-            const email = req?.params?.email;
-            console.log(email, req?.decoded?.email);
+        app.get('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
             if (email !== req.decoded.email) {
                 return res.status(403).send({ message: "UnAuthorize Access" })
             }
 
             const query = { email: email };
             const user = await userCollection.findOne(query);
+
             let admin = false;
-            if (user) {
-                admin = user?.role === 'admin'
-            }
-            res.send({ admin });
+            // if (!user) {
+            //     return res.status(404).send({ message: 'User not found' })
+            // }
+
+            admin = user.role === 'admin';
+            res.send({ admin })
+
         })
+
 
 
         app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
@@ -136,10 +141,58 @@ async function run() {
             const result = await userCollection.insertOne(user);
             res.send(result);
         })
-
+        // Menu collection
         app.get('/menu', async (req, res) => {
             const query = {};
             const result = await menuCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // add a menu 
+        app.post('/menu', verifyJWT, verifyAdmin, async (req, res) => {
+            const menu = req.body;
+            const result = await menuCollection.insertOne(menu);
+            res.send(result);
+        })
+
+        // delete a menu
+        app.delete('/menu/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+
+            // need adjust object id
+            const query = {
+                _id: id
+            };
+            const result = await menuCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // get a menu
+        app.get('/menu/:id', async (req, res) => {
+            const id = req.params.id;
+            // need adjust object id
+            const query = { _id: id };
+            const result = await menuCollection.findOne(query);
+            res.send(result);
+        })
+
+        // update a menu 
+        app.patch('/menu/:id', async (req, res) => {
+            const item = req.body;
+            const id = req.params.id;
+            // need adjust object id
+            const query = { _id: id };
+
+            const updatedDoc = {
+                $set: {
+                    name: item.name,
+                    category: item.category,
+                    price: item.price,
+                    recipe: item.recipe,
+                    image: item.image,
+                }
+            }
+            const result = await menuCollection.updateOne(query, updatedDoc);
             res.send(result);
         })
 
